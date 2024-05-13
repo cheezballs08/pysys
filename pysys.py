@@ -73,6 +73,14 @@ class Scheduler(Singleton):
     executing_commands: list[Command] = []
     finalizing_commands: list[Command] = []
     
+    def setup_scheduler(self, subsystem_commands_dictionary: dict[Subsystem, tuple[Command]]):
+        for subsystem, commands in subsystem_commands_dictionary.items():
+            self.subsystems.append(subsystem)
+            for command in commands:
+                command.subsystems.append(subsystem)
+                self.commands.append(command)
+                self.idle_commands.append(command)
+    
     def run_subsystem_periodics(self):
         for subsystem in self.subsystems:
             subsystem.periodic()
@@ -144,6 +152,10 @@ class System(Singleton):
     
     time_since_last_loop: float = 0.0
     
+    def setup_system(self, loop_period: float):
+        self.is_active = True
+        self.start_time = time.time()
+        
     def update_time(self):
         self.current_time = time.time()
         self.time_since_last_loop = self.current_time - self.loop_start_time
