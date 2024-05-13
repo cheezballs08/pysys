@@ -10,7 +10,7 @@ class Logger(Singleton):
         
     def log_to_file(self, message: str, file_name: str):
         with open(file_name, "a") as file:
-            file.write(message)
+            file.write(message + "\n")
             
 class Subsystem:
     
@@ -40,6 +40,8 @@ class Command:
     
     is_executing: bool = False
     
+    has_initialized: bool = False
+    
     def __init__(self, name: str):
         self.name = name
         
@@ -56,7 +58,7 @@ class Command:
         self.logger.log_to_file(f"{self.name} has finalized.", "log.txt")
         
     def should_end(self) -> bool:
-        pass
+        False
     
 class Scheduler(Singleton):
     
@@ -97,12 +99,12 @@ class Scheduler(Singleton):
 
     def check_command_ends(self):
         for command in self.executing_commands:
-            if command in self.executing_commands:
+            if command.should_end():
                 self.interrupt_command(command)
                 
     def check_subsystem_default_commands(self):
         for subsystem in self.subsystems:
-            if subsystem.default_command in self.idle_commands:
+            if subsystem.default_command in self.idle_commands and subsystem.current_command is None:
                 self.schedule_command(subsystem.default_command)
     
     def schedule_command(self, command: Command):
@@ -111,12 +113,21 @@ class Scheduler(Singleton):
                 if subsystem.current_command is not command:
                     self.interrupt_command(subsystem.current_command)
                     subsystem.current_command = command
+            self.scheduled_commands.append(command)
+            self.idle_commands.remove(command)
                     
     def schedule_commands(self, commands: list[Command]):
         for command in commands:
             self.schedule_command(command)
             
     def execute_commands(self):
+        for command in self.scheduled_commands:
+            if command.has_initialized is False:
+                command.initialize()
+            self.executing_commands.append(command)
+            self.scheduled_commands.remove(command)
+            command.is_executing = True
+            
         for command in self.executing_commands:
             command.execute()
             command.is_executing = True
@@ -125,6 +136,9 @@ class Scheduler(Singleton):
         for command in self.finalizing_commands:
             command.finalize()
             command.is_executing = False
+            for subsystem in command.subsystems:
+                if subsystem.current_command is command:
+                    subsystem.current_command = None
             self.finalizing_commands.remove(command)
             self.idle_commands.append(command)
             
@@ -154,6 +168,7 @@ class System(Singleton):
     
     def setup_system(self, loop_period: float):
         self.is_active = True
+        self.loop_period = loop_period
         self.start_time = time.time()
         
     def update_time(self):
@@ -179,7 +194,8 @@ class System(Singleton):
         self.update_time()
         
         self.logger.log_to_terminal(f"Loop Ended, Tick: {self.tick_count}, Current time: {self.time_elapsed}")
-        self.logger.log_to_file(f"Loop Ended, Tick: {self.tick_count}, Current time: {self.time_elapsed}", "log.txt")
+        self.logger.log_to_terminal("")
+        self.logger.log_to_file(f"Loop Ended, Tick: {self.tick_count}, Current time: {self.time_elapsed} \n", "log.txt")
         
         if self.loop_period > self.time_since_last_loop:
             time.sleep(self.loop_period - self.time_since_last_loop)
@@ -187,7 +203,7 @@ class System(Singleton):
             self.logger.log_to_terminal(f"Loop Period Exceeded, Current Tick: {self.tick_count}, Current Time: {self.time_elapsed}")
             self.logger.log_to_file(f"Loop Period Exceeded, Current Tick: {self.tick_count}, Current Time: {self.time_elapsed}", "log.txt")
             
-        def exit_system(self):
-            self.is_active = False
-            self.logger.log_to_file(f"System has exited after {self.tick_count} ticks and {self.time_elapsed} seconds", "log.txt")
-            self.logger.log_to_terminal(f"System has exited after {self.tick_count} ticks and {self.time_elapsed} seconds")
+    def exit_system(self):
+        self.is_active = False
+        self.logger.log_to_file(f"System has exited after {self.tick_count} ticks and {self.time_elapsed} seconds", "log.txt")
+        self.logger.log_to_terminal(f"System has exited after {self.tick_count} ticks and {self.time_elapsed} seconds")
