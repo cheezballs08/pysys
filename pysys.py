@@ -78,9 +78,9 @@ class Scheduler(Singleton):
 
     
     def setup_scheduler(self, subsystem_commands_dictionary: dict[Subsystem, tuple[Command]]):
-        for subsystem in subsystem_commands_dictionary:
+        for subsystem, commands in subsystem_commands_dictionary.items():
             self.subsystems.append(subsystem)
-            for command in subsystem_commands_dictionary[subsystem]:
+            for command in commands:
                 self.commands.append(command)
                 self.idle_commands.append(command)
                 command.subsystems.append(subsystem)
