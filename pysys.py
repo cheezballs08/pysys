@@ -18,13 +18,11 @@ class Subsystem:
     
     logger: Logger = Logger.get_instance()
     
-    current_command: "Command" = None
-    
-    default_command: "Command" = None
-    
     def __init__(self, name: str, default_command: "Command"):
         self.name = name
         self.default_command = default_command
+        self.current_command: "Command" = None
+        self.default_command: "Command" = default_command
         
     def periodic(self):
         self.logger.log_to_terminal(f"{self.name} has executed its periodic function.")
@@ -36,14 +34,11 @@ class Command:
     
     logger: Logger = Logger.get_instance()
     
-    subsystems: list[Subsystem] = []
-    
-    is_executing: bool = False
-    
-    has_initialized: bool = False
-    
     def __init__(self, name: str):
         self.name = name
+        self.subsystems: list[Subsystem] = []
+        self.is_executing: bool = False
+        self.has_initialized: bool = False        
         
     def initialize(self):
         self.logger.log_to_terminal(f"{self.name} has initialized.")
@@ -75,13 +70,22 @@ class Scheduler(Singleton):
     executing_commands: list[Command] = []
     finalizing_commands: list[Command] = []
     
+    def remove_duplicate_items(self):
+        self.commands = list(set(self.commands))
+        self.subsystems = list(set(self.subsystems))
+        for command in self.commands:
+            command.subsystems = list(set(command.subsystems))
+
+    
     def setup_scheduler(self, subsystem_commands_dictionary: dict[Subsystem, tuple[Command]]):
-        for subsystem, commands in subsystem_commands_dictionary.items():
+        for subsystem in subsystem_commands_dictionary:
             self.subsystems.append(subsystem)
-            for command in commands:
-                command.subsystems.append(subsystem)
+            for command in subsystem_commands_dictionary[subsystem]:
                 self.commands.append(command)
                 self.idle_commands.append(command)
+                command.subsystems.append(subsystem)
+        self.remove_duplicate_items()
+        
     
     def run_subsystem_periodics(self):
         for subsystem in self.subsystems:

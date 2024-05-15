@@ -1,37 +1,44 @@
 import os
-from pysys import *
+import pysys
 """Object definitons"""
+scheduler = pysys.Scheduler.get_instance()
 
-command1 = Command("Command1")
-command2 = Command("Command2")
+system = pysys.System.get_instance()
 
-subsystem = Subsystem("Subsystem", command2)
+logger = pysys.Logger.get_instance()
 
-scheduler = Scheduler.get_instance()
+subsystem1 = pysys.Subsystem("Subsystem 1", None)
+subsystem2 = pysys.Subsystem("Subsystem 2", None)
 
-system = System.get_instance()
+command1 = pysys.Command("Command 1")
+command2 = pysys.Command("Command 2")
+command3 = pysys.Command("Command 3")
+
 
 """Setup"""
+
 scheduler.setup_scheduler({
-    subsystem: (command1, command2)
+   subsystem1: (command1,),
+    subsystem2: (command2,)
 })
 
-system.setup_system(loop_period=1)
+system.setup_system(loop_period=0.5)
 """Loop"""
 
 with open("log.txt", "w") as file:
     file.write("")
 
+    
 while system.is_active:
     os.system('cls' if os.name == 'nt' else 'clear')
     
     system.run_system()
     
-    if system.tick_count == 2:
+    if system.tick_count == 10:
         scheduler.schedule_command(command1)
         
-    if system.tick_count == 10:
-        scheduler.interrupt_command(command1)
-        
-    if system.tick_count == 20:
+    if system.tick_count == 15:
+        scheduler.schedule_command(command2)
+    
+    if system.tick_count == 100:
         system.exit_system()
