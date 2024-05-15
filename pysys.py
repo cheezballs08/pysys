@@ -1,4 +1,5 @@
 import time
+import threading
 from util import Singleton
 
 class Logger(Singleton):
@@ -24,6 +25,9 @@ class Subsystem:
     def periodic(self):
         self.logger.log_to_terminal(f"{self.name} has executed its periodic function.")
         self.logger.log_to_file(f"{self.name} has executed its periodic function.", "log.txt")
+        
+    def thread_periodic(self):
+        pass
         
 class Command:
 
@@ -70,6 +74,13 @@ class Scheduler(Singleton):
         self.subsystems = list(set(self.subsystems))
         for command in self.commands:
             command.subsystems = list(set(command.subsystems))
+            
+    def start_subsystem_threads(self):
+        for subsystem in self.subsystems:
+            if subsystem.has_thread_started is False:
+                subsystem.has_thread_started = True
+                thread = threading.Thread(target=subsystem.thread_periodic)
+                thread.start()
 
     def setup_scheduler(self, subsystem_commands_dictionary: dict[Subsystem, tuple[Command]], subsystem_default_command_dicitionary: dict[Subsystem, Command]):
         for subsystem, commands in subsystem_commands_dictionary.items():
@@ -173,6 +184,8 @@ class System(Singleton):
     
     time_since_last_loop: float = 0.0
     
+    has_threads_started: bool = False
+    
     def setup_system(self, loop_period: float):
         self.is_active = True
         self.loop_period = loop_period
@@ -185,6 +198,8 @@ class System(Singleton):
         
     def run_system(self):
         self.tick_count += 1
+        if self.has_threads_started is True:
+            self.scheduler.start_subsystem_threads()
         
         self.loop_start_time = time.time()
         self.update_time()
