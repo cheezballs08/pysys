@@ -14,27 +14,22 @@ class Logger(Singleton):
             
 class Subsystem:
     
-    name: str = "Subsystem"
-    
     logger: Logger = Logger.get_instance()
     
-    def __init__(self, name: str, default_command: "Command"):
+    def __init__(self, name: str = "Subsystem"):
         self.name = name
-        self.default_command = default_command
         self.current_command: "Command" = None
-        self.default_command: "Command" = default_command
+        self.default_command: "Command" = None
         
     def periodic(self):
         self.logger.log_to_terminal(f"{self.name} has executed its periodic function.")
         self.logger.log_to_file(f"{self.name} has executed its periodic function.", "log.txt")
         
 class Command:
-    
-    name: str = "Command"
-    
+
     logger: Logger = Logger.get_instance()
     
-    def __init__(self, name: str):
+    def __init__(self, name: str = "Command"):
         self.name = name
         self.subsystems: list[Subsystem] = []
         self.is_executing: bool = False
@@ -76,14 +71,17 @@ class Scheduler(Singleton):
         for command in self.commands:
             command.subsystems = list(set(command.subsystems))
 
-    
-    def setup_scheduler(self, subsystem_commands_dictionary: dict[Subsystem, tuple[Command]]):
+    def setup_scheduler(self, subsystem_commands_dictionary: dict[Subsystem, tuple[Command]], subsystem_default_command_dicitionary: dict[Subsystem, Command]):
         for subsystem, commands in subsystem_commands_dictionary.items():
             self.subsystems.append(subsystem)
             for command in commands:
                 self.commands.append(command)
                 self.idle_commands.append(command)
                 command.subsystems.append(subsystem)
+                
+        for subsystem, default_command in subsystem_default_command_dicitionary.items():
+            subsystem.default_command = default_command
+        
         self.remove_duplicate_items()
         
     
