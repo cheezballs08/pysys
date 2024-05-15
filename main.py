@@ -36,7 +36,6 @@ scheduler.setup_scheduler(
     )
 
 system.setup_system(loop_period=0.02)
-
 #Setup
 
 #User setup
