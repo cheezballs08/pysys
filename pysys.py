@@ -84,7 +84,6 @@ class Scheduler(Singleton):
         
         self.remove_duplicate_items()
         
-    
     def run_subsystem_periodics(self):
         for subsystem in self.subsystems:
             subsystem.periodic()

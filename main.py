@@ -36,6 +36,7 @@ scheduler.setup_scheduler(
     )
 
 system.setup_system(loop_period=0.02)
+
 #Setup
 
 #User setup
@@ -48,6 +49,8 @@ scheduler.schedule_command(command4)
 with open("log.txt", "w") as file:
     file.write("")
     
+scheduler.remove_duplicate_items() #Just in case, I would advise you to keep this here.
+
 while system.is_active:
     os.system('cls' if os.name == 'nt' else 'clear')
     
