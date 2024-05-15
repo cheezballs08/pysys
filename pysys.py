@@ -92,6 +92,9 @@ class Scheduler(Singleton):
     def interrupt_command(self, command: Command):
         if command in self.executing_commands:
             self.executing_commands.remove(command)
+            for subsystem in command.subsystems:
+                if subsystem.current_command is command:
+                    subsystem.current_command = None
             command.is_executing = False
             self.finalizing_commands.append(command)
     
@@ -127,12 +130,14 @@ class Scheduler(Singleton):
             if command.has_initialized is False:
                 command.initialize()
             self.executing_commands.append(command)
-            self.scheduled_commands.remove(command)
             command.is_executing = True
             
         for command in self.executing_commands:
             command.execute()
             command.is_executing = True
+            
+        self.scheduled_commands = []
+            
             
     def finalize_commands(self):
         for command in self.finalizing_commands:
@@ -141,8 +146,9 @@ class Scheduler(Singleton):
             for subsystem in command.subsystems:
                 if subsystem.current_command is command:
                     subsystem.current_command = None
-            self.finalizing_commands.remove(command)
             self.idle_commands.append(command)
+            
+        self.finalizing_commands = []
             
 class System(Singleton):
     
