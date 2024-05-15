@@ -24,7 +24,7 @@ class Subsystem:
         
     def periodic(self):
         self.logger.log_to_terminal(f"{self.name} has executed its periodic function.")
-        self.logger.log_to_file(f"{self.name} has executed its periodic function.", "log.txt")
+        self.logger.log_to_file(f"{self.name} has executed its periodic function.", "log.pylog")
         
     def thread_periodic(self):
         pass
@@ -41,15 +41,15 @@ class Command:
         
     def initialize(self):
         self.logger.log_to_terminal(f"{self.name} has initialized.")
-        self.logger.log_to_file(f"{self.name} has initialized.", "log.txt")
+        self.logger.log_to_file(f"{self.name} has initialized.", "log.pylog")
         
     def execute(self):
         self.logger.log_to_terminal(f"{self.name} has executed.")
-        self.logger.log_to_file(f"{self.name} has executed.", "log.txt")
+        self.logger.log_to_file(f"{self.name} has executed.", "log.pylog")
         
     def finalize(self):
         self.logger.log_to_terminal(f"{self.name} has finalized.")
-        self.logger.log_to_file(f"{self.name} has finalized.", "log.txt")
+        self.logger.log_to_file(f"{self.name} has finalized.", "log.pylog")
         
     def should_end(self) -> bool:
         False
@@ -77,8 +77,6 @@ class Scheduler(Singleton):
             
     def start_subsystem_threads(self):
         for subsystem in self.subsystems:
-            if subsystem.has_thread_started is False:
-                subsystem.has_thread_started = True
                 thread = threading.Thread(target=subsystem.thread_periodic)
                 thread.start()
 
@@ -198,14 +196,15 @@ class System(Singleton):
         
     def run_system(self):
         self.tick_count += 1
-        if self.has_threads_started is True:
+        if self.has_threads_started is False:
             self.scheduler.start_subsystem_threads()
+            self.has_threads_started = True
         
         self.loop_start_time = time.time()
         self.update_time()
         
         self.logger.log_to_terminal(f"Loop Started, Tick: {self.tick_count}, Current time: {self.time_elapsed}")
-        self.logger.log_to_file(f"Loop Started, Tick: {self.tick_count}, Current time: {self.time_elapsed}", "log.txt")
+        self.logger.log_to_file(f"Loop Started, Tick: {self.tick_count}, Current time: {self.time_elapsed}", "log.pylog")
         
         self.scheduler.run_subsystem_periodics()
         self.scheduler.check_subsystem_default_commands()
@@ -217,15 +216,15 @@ class System(Singleton):
         
         self.logger.log_to_terminal(f"Loop Ended, Tick: {self.tick_count}, Current time: {self.time_elapsed}")
         self.logger.log_to_terminal("")
-        self.logger.log_to_file(f"Loop Ended, Tick: {self.tick_count}, Current time: {self.time_elapsed} \n", "log.txt")
+        self.logger.log_to_file(f"Loop Ended, Tick: {self.tick_count}, Current time: {self.time_elapsed} \n", "log.pylog")
         
         if self.loop_period > self.time_since_last_loop:
             time.sleep(self.loop_period - self.time_since_last_loop)
         else:
             self.logger.log_to_terminal(f"Loop Period Exceeded, Current Tick: {self.tick_count}, Current Time: {self.time_elapsed}")
-            self.logger.log_to_file(f"Loop Period Exceeded, Current Tick: {self.tick_count}, Current Time: {self.time_elapsed}", "log.txt")
+            self.logger.log_to_file(f"Loop Period Exceeded, Current Tick: {self.tick_count}, Current Time: {self.time_elapsed}", "log.pylog")
             
     def exit_system(self):
         self.is_active = False
-        self.logger.log_to_file(f"System has exited after {self.tick_count} ticks and {self.time_elapsed} seconds", "log.txt")
+        self.logger.log_to_file(f"System has exited after {self.tick_count} ticks and {self.time_elapsed} seconds", "log.pylog")
         self.logger.log_to_terminal(f"System has exited after {self.tick_count} ticks and {self.time_elapsed} seconds")
